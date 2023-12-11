@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+
+    <title></title>
+    <link rel="stylesheet" href="dist/reveal.css" />
+    <link rel="stylesheet" href="dist/theme/black.css" id="theme" />
+    <link rel="stylesheet" href="plugin/highlight/zenburn.css" />
+	<link rel="stylesheet" href="css/layout.css" />
+	<link rel="stylesheet" href="plugin/customcontrols/style.css">
+
+	<link rel="stylesheet" href="plugin/reveal-pointer/pointer.css" />
+
+
+    <script defer src="dist/fontawesome/all.min.js"></script>
+
+	<script type="text/javascript">
+		var forgetPop = true;
+		function onPopState(event) {
+			if(forgetPop){
+				forgetPop = false;
+			} else {
+				parent.postMessage(event.target.location.href, "app://obsidian.md");
+			}
+        }
+		window.onpopstate = onPopState;
+		window.onmessage = event => {
+			if(event.data == "reload"){
+				window.document.location.reload();
+			}
+			forgetPop = true;
+		}
+
+		function fitElements(){
+			const itemsToFit = document.getElementsByClassName('fitText');
+			for (const item in itemsToFit) {
+				if (Object.hasOwnProperty.call(itemsToFit, item)) {
+					var element = itemsToFit[item];
+					fitElement(element,1, 1000);
+					element.classList.remove('fitText');
+				}
+			}
+		}
+
+		function fitElement(element, start, end){
+
+			let size = (end + start) / 2;
+			element.style.fontSize = `${size}px`;
+
+			if(Math.abs(start - end) < 1){
+				while(element.scrollHeight > element.offsetHeight){
+					size--;
+					element.style.fontSize = `${size}px`;
+				}
+				return;
+			}
+
+			if(element.scrollHeight > element.offsetHeight){
+				fitElement(element, start, size);
+			} else {
+				fitElement(element, size, end);
+			}		
+		}
+
+
+		document.onreadystatechange = () => {
+			fitElements();
+			if (document.readyState === 'complete') {
+				if (window.location.href.indexOf("?export") != -1){
+					parent.postMessage(event.target.location.href, "app://obsidian.md");
+				}
+				if (window.location.href.indexOf("print-pdf") != -1){
+					let stateCheck = setInterval(() => {
+						clearInterval(stateCheck);
+						window.print();
+					}, 250);
+				}
+			}
+	};
+
+
+        </script>
+  </head>
+  <body>
+    <div class="reveal">
+      <div class="slides"><section  data-markdown><script type="text/template"><!-- .slide: class="drop" -->
+<div class="" style="position: absolute; left: 0px; top: 0px; height: 1200px; width: 1200px; min-height: 1200px; display: flex; flex-direction: column; align-items: center; justify-content: center" absolute="true">
+
+###  From Sets to Types: A Constructive Journey
+
+#### By: Davis Davalos-DeLosh
+</div></script></section><section  data-markdown><script type="text/template"><!-- .slide: class="drop" -->
+<div class="" style="position: absolute; left: 0px; top: 0px; height: 1200px; width: 1200px; min-height: 1200px; display: flex; flex-direction: column; align-items: center; justify-content: center" absolute="true">
+
+### Introduction
+<split left="2" right="1">
+
+<div class="block">
+
+* Set theory developed to resolve paradoxes in naive set theory (Russell's paradox)
+* Type theory later emerged as an alternative foundation for mathematics
+	* Pioneered by Church, Martin-Löf, others in 1940s
+* We will look at Martin-Löf dependent type theory (MLTT)
+</div>
+
+
+<div class="block">
+
+<img src="storage/Pasted image 20231206002123.png" alt="" style="object-fit: scale-down">
+
+<img src="storage/Pasted image 20231206002236.png" alt="" style="object-fit: scale-down">
+
+</div>
+
+
+
+</split>
+</div></script></section><section  data-markdown><script type="text/template"><!-- .slide: class="drop" -->
+<div class="" style="position: absolute; left: 0px; top: 0px; height: 1200px; width: 1200px; min-height: 1200px; display: flex; flex-direction: column; align-items: center; justify-content: center" absolute="true">
+
+### Philosophical Differences
+<style>
+	.mermaid {width:200% !important}
+</style>
+* Constructivism vs. platonism
+	* Constructivism: mathematical objects constructed from proofs
+	* Platonism: mathematical objects have independent existence
+* Sets vs. types
+	* Sets identify objects like "multiples of 3"
+	* Types more intuitive like "kinds" of things
+
+<div class="mermaid">
+flowchart TB
+    subgraph Constructivism
+        A[Mathematical Objects] --> B[Constructed from Proofs]
+    end
+    
+    subgraph Platonism
+        C[Mathematical Objects] --> D[Independent Existence]
+    end
+
+</div>
+
+
+<div class="mermaid">
+flowchart TB
+	A["Number 6 <br></br> Set Theory"] --> B{"Multiples of 3"}
+	A --> C{"Odd Numbers"}
+	
+	D["Number 6 <br></br> Type Theory"] --> E["Natural Number <br></br> Type"]
+
+</div>
+</div></script></section><section  data-markdown><script type="text/template"><!-- .slide: class="drop" -->
+<div class="" style="position: absolute; left: 0px; top: 0px; height: 1200px; width: 1200px; min-height: 1200px; display: flex; flex-direction: column; align-items: center; justify-content: center" absolute="true">
+
+### Technical Differences
+<split left="1" right="2">
+<div class="block">
+
+##### von Neumann
+$
+\begin{aligned}0  &= \emptyset{}\\\\n+1 &= n \cup \\{n\\}\end{aligned}
+$
+##### MLTT
+```haskell
+data Nat: Type where
+	Z : Nat
+	S : Nat -> Nat
+```
+</div>
+
+
+* Sets are atoms, everything encoded as sets
+	* `$(a, b) = \{\{a\}, \{a,b\}\}$`
+* Types allow separate representations
+	* `$A \times B \rightarrow (a, b)$`
+		* `$a :A$` and `$b: B$`
+* Example: Natural numbers
+	* ZFC uses set theoretic encoding
+		* von Neumann
+	* MLTT uses inductive data types
+		* `$2=S(S(Z))$`
+</div></script></section><section  data-markdown><script type="text/template"><!-- .slide: class="drop" -->
+<div class="" style="position: absolute; left: 0px; top: 0px; height: 1200px; width: 1200px; min-height: 1200px; display: flex; flex-direction: column; align-items: center; justify-content: center" absolute="true">
+
+### Benefits of Type Theory
+<split left=2 right=1>
+<div class="block">
+
+* Integrates logic
+	* Propositions are types
+	* Proof objects inhabit types
+	* No law of the excluded middle
+		* `$\neg A \lor A$`
+		* `$\neg A \rightarrow A$`
+* Properties invariant under isomorphism
+	* Equivalence of encodings
+	* Example: `$\mathbb{N} \subseteq \mathbb{Z}$`
+
+$
+\begin{aligned}
+A \land B &= (A, B)\\\\
+A \lor B &= x: (A\mid B)\\\\
+\end{aligned}
+$
+```haskell
+data Example a b =
+	Left a
+	| Right b
+```
+
+`$0,1,10,11,100,\dots$`
+</div>
+
+
+<div class="block">
+
+##### von Neumann
+$
+\begin{aligned}
+0&=\\{\\}\\\\
+1&=\\{0\\}\\\\
+2&=\\{0,1\\}\\\\
+\vdots\\\\
+n &= \\{0,1,\dots,n-1\\}\\\\
+\end{aligned}
+$
+##### Zermelo
+$
+\begin{aligned}
+0&=\\{\\}\\\\
+1&=\\{0\\}\\\\
+2&=\\{1\\}\\\\
+\vdots\\\\
+n&=\\{n-1\\}\\\\
+\end{aligned}
+$
+##### Non-invariant
+`$n \subseteq n + 1$`
+</div>
+
+
+</split>
+</div></script></section><section ><section data-markdown><script type="text/template"><!-- .slide: class="drop" -->
+<div class="" style="position: absolute; left: 0px; top: 0px; height: 1200px; width: 1200px; min-height: 1200px; display: flex; flex-direction: column; align-items: center; justify-content: center" absolute="true">
+
+### Proof: Addition Commutativity
+* Equality proofs
+	* `$1 + 1 = 2$` is a type inhabited by `Refl`
+		* `$x=x$` through *unification*
+```haskell
+data Equal : a -> b -> Type where
+   Refl : Equal x x
+```
+	* `plus Z n = n` definitionally equal, `plus n Z = n` propositionally equal.
+
+```haskell
+data Nat : Type where
+	Z : Nat
+	S : Nat -> Nat
+
+two : Nat
+two = S(S(Z))
+
+plus : Nat -> Nat -> Nat
+plus Z     m = m
+plus (S k) m = S (plus k m)
+```
+</div></script></section><section data-markdown><script type="text/template"><!-- .slide: class="drop" -->
+<div class="" style="position: absolute; left: 0px; top: 0px; height: 1200px; width: 1200px; min-height: 1200px; display: flex; flex-direction: column; align-items: center; justify-content: center" absolute="true">
+
+* Goal: Construct inhabitant of...
+
+```haskell
+plus_commutes : (n : Nat) -> (m : Nat) -> n + m = m + n
+```
+</div></script></section><section data-markdown><script type="text/template"><!-- .slide: class="drop" -->
+<div class="" style="position: absolute; left: 0px; top: 0px; height: 1200px; width: 1200px; min-height: 1200px; display: flex; flex-direction: column; align-items: center; justify-content: center" absolute="true">
+
+```haskell
+plus_commutes : (n : Nat) -> (m : Nat) -> n + m = m + n
+plus_commutes n m = ...
+```
+</div></script></section><section data-markdown><script type="text/template"><!-- .slide: class="drop" -->
+<div class="" style="position: absolute; left: 0px; top: 0px; height: 1200px; width: 1200px; min-height: 1200px; display: flex; flex-direction: column; align-items: center; justify-content: center" absolute="true">
+
+```haskell
+plus_commutes : (n : Nat) -> (m : Nat) -> n + m = m + n
+plus_commutes Z m = ...
+plus_commutes (S k) m = ...
+```
+</div></script></section><section data-markdown><script type="text/template"><!-- .slide: class="drop" -->
+<div class="" style="position: absolute; left: 0px; top: 0px; height: 1200px; width: 1200px; min-height: 1200px; display: flex; flex-direction: column; align-items: center; justify-content: center" absolute="true">
+
+```haskell
+plus_commutes_Z : (m : Nat) -> m = plus m Z
+
+plus_commutes : (n : Nat) -> (m : Nat) -> n + m = m + n
+plus_commutes Z m = plus_commutes_Z
+plus_commutes (S k) m = ...
+```
+</div></script></section><section data-markdown><script type="text/template"><!-- .slide: class="drop" -->
+<div class="" style="position: absolute; left: 0px; top: 0px; height: 1200px; width: 1200px; min-height: 1200px; display: flex; flex-direction: column; align-items: center; justify-content: center" absolute="true">
+
+```haskell
+plus_commutes_Z : (m : Nat) -> m = plus m Z
+plus_commutes_Z Z = ...
+plus_commutes_Z (S k) = ...
+
+plus_commutes : (n : Nat) -> (m : Nat) -> n + m = m + n
+plus_commutes Z m = plus_commutes_Z
+plus_commutes (S k) m = ...
+```
+</div></script></section><section data-markdown><script type="text/template"><!-- .slide: class="drop" -->
+<div class="" style="position: absolute; left: 0px; top: 0px; height: 1200px; width: 1200px; min-height: 1200px; display: flex; flex-direction: column; align-items: center; justify-content: center" absolute="true">
+
+```haskell
+plus_commutes_Z : (m : Nat) -> m = plus m Z
+plus_commutes_Z Z = Refl -- Refl here is of type Z = plus Z Z
+plus_commutes_Z (S k) = ...
+
+plus_commutes : (n : Nat) -> (m : Nat) -> n + m = m + n
+plus_commutes Z m = plus_commutes_Z
+plus_commutes (S k) m = ...
+```
+</div></script></section><section data-markdown><script type="text/template"><!-- .slide: class="drop" -->
+<div class="" style="position: absolute; left: 0px; top: 0px; height: 1200px; width: 1200px; min-height: 1200px; display: flex; flex-direction: column; align-items: center; justify-content: center" absolute="true">
+
+```haskell
+plus_commutes_Z : (m : Nat) -> m = plus m Z
+plus_commutes_Z Z = Refl -- Refl here is of type Z = plus Z Z
+plus_commutes_Z (S k) =
+	let rec = plus_commutes_Z k in ... -- rec: k = plus k Z
+
+plus_commutes : (n : Nat) -> (m : Nat) -> n + m = m + n
+plus_commutes Z m = plus_commutes_Z
+plus_commutes (S k) m = ...
+```
+</div></script></section><section data-markdown><script type="text/template"><!-- .slide: class="drop" -->
+<div class="" style="position: absolute; left: 0px; top: 0px; height: 1200px; width: 1200px; min-height: 1200px; display: flex; flex-direction: column; align-items: center; justify-content: center" absolute="true">
+
+```haskell
+plus_commutes_Z : (m : Nat) -> m = plus m Z
+-- Z = plus Z Z
+plus_commutes_Z Z = Refl -- Refl here is of type Z = plus Z Z
+-- (S k) = plus (S k) Z
+-- (S k) = S (plus k Z)
+plus_commutes_Z (S k) =
+	let rec = plus_commutes_Z k in -- rec: k = plus k Z
+		rewrite sym rec in ... -- sym rec: plus k Z = k
+
+plus_commutes : (n : Nat) -> (m : Nat) -> n + m = m + n
+plus_commutes Z m = plus_commutes_Z
+plus_commutes (S k) m = ...
+```
+</div></script></section><section data-markdown><script type="text/template"><!-- .slide: class="drop" -->
+<div class="" style="position: absolute; left: 0px; top: 0px; height: 1200px; width: 1200px; min-height: 1200px; display: flex; flex-direction: column; align-items: center; justify-content: center" absolute="true">
+
+##### Base case done!
+```haskell
+plus_commutes_Z : (m : Nat) -> m = plus m Z
+-- Z = plus Z Z
+plus_commutes_Z Z = Refl -- Refl here is of type Z = plus Z Z
+-- (S k) = plus (S k) Z
+-- (S k) = S (plus k Z)
+plus_commutes_Z (S k) =
+	let rec = plus_commutes_Z k in -- rec: k = plus k Z
+		rewrite sym rec in Refl -- sym rec: plus k Z = k
+
+plus_commutes : (n : Nat) -> (m : Nat) -> n + m = m + n
+plus_commutes Z m = plus_commutes_Z
+-- plus (S k) m  = plus m (S k)
+-- S (plus k m) = plus m (S k)
+plus_commutes (S k) m = ...
+```
+</div></script></section><section data-markdown><script type="text/template"><!-- .slide: class="drop" -->
+<div class="" style="position: absolute; left: 0px; top: 0px; height: 1200px; width: 1200px; min-height: 1200px; display: flex; flex-direction: column; align-items: center; justify-content: center" absolute="true">
+
+```haskell
+-- plus n m = plus m n
+plus_commutes : (n : Nat) -> (m : Nat) -> n + m = m + n
+plus_commutes Z m = plus_commutes_Z
+
+-- plus (S k) m  = plus m (S k)
+-- S (plus k m) = plus m (S k)
+plus_commutes (S k) m =
+	-- plus k m = plus m k
+	-- Gives us: S (plus m k) = plus m (S k)
+	rewrite plus_commutes k m in plus_commutes_S
+```
+</div></script></section><section data-markdown><script type="text/template"><!-- .slide: class="drop" -->
+<div class="" style="position: absolute; left: 0px; top: 0px; height: 1200px; width: 1200px; min-height: 1200px; display: flex; flex-direction: column; align-items: center; justify-content: center" absolute="true">
+
+```haskell
+plus_commutes_S : (k : Nat) -> (m : Nat) -> S (plus m k)
+	= plus m (S k)
+-- S (plus Z k) = plus Z (S k)
+-- By definition of plus: S (plus Z k) = S k
+-- By definition of plus : S k = S k
+plus_commutes_S k Z = Refl
+-- S (plus (S j) k) = plus (S j) (S k)
+-- S(S(plus j k)) = plus (S j) (S k)
+plus_commutes_S k (S j) =
+	-- S (plus j k) = plus j (S k)
+	-- Rewrite: S(plus j (S k)) = plus (S j) (S k)
+	-- By definition: plus (S j) (S k) = plus (S j) (S k)
+	rewrite plus_commutes_S k j in
+		Refl
+```
+</div></script></section><section data-markdown><script type="text/template"><!-- .slide: class="drop" -->
+<div class="" style="position: absolute; left: 0px; top: 0px; height: 1200px; width: 1200px; min-height: 1200px; display: flex; flex-direction: column; align-items: center; justify-content: center" absolute="true">
+
+##### DONE!
+```haskell
+plus_commutes_Z : (m : Nat) -> m = plus m Z
+plus_commutes_Z Z = Refl
+plus_commutes_Z (S k)
+   = let rec = plus_commutes_Z k in
+         rewrite sym rec in Refl
+```
+```haskell
+plus_commutes_S : (k : Nat) -> (m : Nat) -> S (plus m k) =
+	plus m (S k)
+plus_commutes_S k Z = Refl
+plus_commutes_S k (S j) =
+	rewrite plus_commutes_S k j in Refl
+```
+```haskell
+plus_commutes : (n : Nat) -> (m : Nat) -> n + m = m + n
+plus_commutes Z m = plus_commutes_Z
+plus_commutes (S k) m =
+	rewrite plus_commutes k m in plus_commutes_S
+```
+</div></script></section></section><section  data-markdown><script type="text/template"><!-- .slide: class="drop" -->
+<div class="" style="position: absolute; left: 0px; top: 0px; height: 1200px; width: 1200px; min-height: 1200px; display: flex; flex-direction: column; align-items: center; justify-content: center" absolute="true">
+
+### Conclusion
+<split left=2 right=1>
+<div class="block">
+
+* Type theory more intuitive foundation
+* Constructive approach fits computation
+* Lots of active research
+	* Homotopy type theory
+	* Proof assistants
+	* Functional programming
+
+Sources: Documentation for the Idris 2 Language, 
+</div>
+
+
+<div class="block">
+
+```haskell
+fib :: Int -> Int
+fib 0 = 0
+fib 1 = 1
+fib n 
+  | n >= 0 =
+	  fib (n-1)
+	+ fib (n-2)
+  | otherwise = 0
+```
+</div>
+
+
+</split>
+</div></script></section></div>
+    </div>
+
+    <script src="dist/reveal.js"></script>
+
+    <script src="plugin/markdown/markdown.js"></script>
+    <script src="plugin/highlight/highlight.js"></script>
+    <script src="plugin/zoom/zoom.js"></script>
+    <script src="plugin/notes/notes.js"></script>
+    <script src="plugin/math/math.js"></script>
+	<script src="plugin/mermaid/mermaid.js"></script>
+	<script src="plugin/chart/chart.min.js"></script>
+	<script src="plugin/chart/plugin.js"></script>
+	<script src="plugin/customcontrols/plugin.js"></script>
+	<script src="plugin/reveal-pointer/pointer.js"></script>
+
+    <script>
+      function extend() {
+        var target = {};
+        for (var i = 0; i < arguments.length; i++) {
+          var source = arguments[i];
+          for (var key in source) {
+            if (source.hasOwnProperty(key)) {
+              target[key] = source[key];
+            }
+          }
+        }
+        return target;
+      }
+
+	  function isLight(color) {
+		let hex = color.replace('#', '');
+
+		// convert #fff => #ffffff
+		if(hex.length == 3){
+			hex = `${hex[0]}${hex[0]}${hex[1]}${hex[1]}${hex[2]}${hex[2]}`;
+		}
+
+		const c_r = parseInt(hex.substr(0, 2), 16);
+		const c_g = parseInt(hex.substr(2, 2), 16);
+		const c_b = parseInt(hex.substr(4, 2), 16);
+		const brightness = ((c_r * 299) + (c_g * 587) + (c_b * 114)) / 1000;
+		return brightness > 155;
+	}
+
+	var bgColor = getComputedStyle(document.documentElement).getPropertyValue('--r-background-color').trim();
+	var isLight = isLight(bgColor);
+
+	if(isLight){
+		document.body.classList.add('has-light-background');
+	} else {
+		document.body.classList.add('has-dark-background');
+	}
+
+      // default options to init reveal.js
+      var defaultOptions = {
+        controls: true,
+        progress: true,
+        history: true,
+        center: true,
+        transition: 'default', // none/fade/slide/convex/concave/zoom
+        plugins: [
+          RevealMarkdown,
+          RevealHighlight,
+          RevealZoom,
+          RevealNotes,
+          RevealMath.MathJax3,
+		  RevealMermaid,
+		  RevealChart,
+		  RevealCustomControls,
+	      RevealPointer,
+        ],
+
+
+    	allottedTime: 120 * 1000,
+
+		mathjax3: {
+			mathjax: 'plugin/math/mathjax/tex-mml-chtml.js',
+		},
+		markdown: {
+		  gfm: true,
+		  mangle: true,
+		  pedantic: false,
+		  smartLists: false,
+		  smartypants: false,
+		},
+
+		mermaid: {
+			theme: isLight ? 'default' : 'dark',
+		},
+
+		customcontrols: {
+			controls: [
+			]
+		},
+      };
+
+      // options from URL query string
+      var queryOptions = Reveal().getQueryHash() || {};
+
+      var options = extend(defaultOptions, {"width":"1200","height":"1200","margin":0.04,"controls":true,"progress":true,"slideNumber":true,"transition":"slide","transitionSpeed":"default"}, queryOptions);
+    </script>
+
+    <script>
+      Reveal.initialize(options);
+    </script>
+  </body>
+
+  <!-- created with Advanced Slides -->
+</html>
